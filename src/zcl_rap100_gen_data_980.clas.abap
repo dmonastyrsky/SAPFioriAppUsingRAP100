@@ -14,7 +14,7 @@ CLASS zcl_rap100_gen_data_980 IMPLEMENTATION.
 
   METHOD if_oo_adt_classrun~main.
     DATA:
-      group_id   TYPE string VALUE '###',
+      group_id   TYPE string VALUE '980',
       attachment TYPE /dmo/attachment,
       file_name  TYPE /dmo/filename,
       mime_type  TYPE /dmo/mime_type.

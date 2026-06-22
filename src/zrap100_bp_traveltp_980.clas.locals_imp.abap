@@ -1,4 +1,4 @@
-CLASS lch_travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
+CLASS lhc_travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
     CONSTANTS:
       BEGIN OF travel_status,
@@ -22,7 +22,7 @@ CLASS lch_travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
             IMPORTING keys FOR Travel~validateDates.
 ENDCLASS.
 
-CLASS lch_travel IMPLEMENTATION.
+CLASS lhc_travel IMPLEMENTATION.
 
   METHOD get_global_authorizations.
   ENDMETHOD.
