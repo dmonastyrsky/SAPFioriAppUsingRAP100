@@ -17,4 +17,6 @@ use etag
   use action Resume;
   use action Prepare;
 
+  use action deductDiscount;
+
 }

@@ -1,0 +1,25 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Page for travel 980",
+    "originalLanguage": "en",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "generalInformation": {
+    "title": "Travel App 980"
+  },
+  "sections": [
+    {
+      "id": "SECTION_980",
+      "visualizations": [
+        {
+          "id": "APP_DESCRIPTOR_ITEM_980",
+          "ladiAssignment": {
+            "ladiId": "ZRAP100_980_UI5R",
+            "tileId": "ZRAP100_980_UI5R_AL"
+          }
+        }
+      ]
+    }
+  ]
+}

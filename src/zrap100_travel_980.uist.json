@@ -1,0 +1,17 @@
+{
+  "formatVersion": "1",
+  "header": {
+    "description": "Space for travel 980",
+    "originalLanguage": "en",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "generalInformation": {
+    "title": "Travel App 980",
+    "sortPriority": 100.0
+  },
+  "pages": [
+    {
+      "name": "ZRAP100_TRAVEL_980"
+    }
+  ]
+}

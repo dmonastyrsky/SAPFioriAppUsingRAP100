@@ -16,10 +16,12 @@ CLASS lhc_travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
       setStatusToOpen FOR DETERMINE ON MODIFY
         IMPORTING keys FOR Travel~setStatusToOpen,
       validateCustomer FOR VALIDATE ON SAVE
-            IMPORTING keys FOR Travel~validateCustomer.
+        IMPORTING keys FOR Travel~validateCustomer.
 
-          METHODS validateDates FOR VALIDATE ON SAVE
-            IMPORTING keys FOR Travel~validateDates.
+    METHODS validateDates FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Travel~validateDates.
+    METHODS deductDiscount FOR MODIFY
+      IMPORTING keys FOR ACTION Travel~deductDiscount RESULT result.
 ENDCLASS.
 
 CLASS lhc_travel IMPLEMENTATION.
@@ -131,59 +133,59 @@ CLASS lhc_travel IMPLEMENTATION.
 * Validation: Check the validity of the entered customer data
 **********************************************************************
   METHOD validateCustomer.
-      "read relevant travel instance data
-      READ ENTITIES OF zrap100_r_traveltp_980 IN LOCAL MODE
-      ENTITY Travel
-       FIELDS ( CustomerID )
-       WITH CORRESPONDING #( keys )
-      RESULT DATA(travels).
+    "read relevant travel instance data
+    READ ENTITIES OF zrap100_r_traveltp_980 IN LOCAL MODE
+    ENTITY Travel
+     FIELDS ( CustomerID )
+     WITH CORRESPONDING #( keys )
+    RESULT DATA(travels).
 
-      DATA customers TYPE SORTED TABLE OF /dmo/customer WITH UNIQUE KEY customer_id.
+    DATA customers TYPE SORTED TABLE OF /dmo/customer WITH UNIQUE KEY customer_id.
 
-      "optimization of DB select: extract distinct non-initial customer IDs
-      customers = CORRESPONDING #( travels DISCARDING DUPLICATES MAPPING customer_id = customerID EXCEPT * ).
-      DELETE customers WHERE customer_id IS INITIAL.
-      IF customers IS NOT INITIAL.
+    "optimization of DB select: extract distinct non-initial customer IDs
+    customers = CORRESPONDING #( travels DISCARDING DUPLICATES MAPPING customer_id = customerID EXCEPT * ).
+    DELETE customers WHERE customer_id IS INITIAL.
+    IF customers IS NOT INITIAL.
 
-        "check if customer ID exists
-        SELECT FROM /dmo/customer FIELDS customer_id
-                                  FOR ALL ENTRIES IN @customers
-                                  WHERE customer_id = @customers-customer_id
-          INTO TABLE @DATA(valid_customers).
+      "check if customer ID exists
+      SELECT FROM /dmo/customer FIELDS customer_id
+                                FOR ALL ENTRIES IN @customers
+                                WHERE customer_id = @customers-customer_id
+        INTO TABLE @DATA(valid_customers).
+    ENDIF.
+
+    "raise msg for non existing and initial customer id
+    LOOP AT travels INTO DATA(travel).
+
+      APPEND VALUE #(  %tky                 = travel-%tky
+                       %state_area          = 'VALIDATE_CUSTOMER'
+                     ) TO reported-travel.
+
+      IF travel-CustomerID IS  INITIAL.
+        APPEND VALUE #( %tky = travel-%tky ) TO failed-travel.
+
+        APPEND VALUE #( %tky                = travel-%tky
+                        %state_area         = 'VALIDATE_CUSTOMER'
+                        %msg                = NEW /dmo/cm_flight_messages(
+                                                                textid   = /dmo/cm_flight_messages=>enter_customer_id
+                                                                severity = if_abap_behv_message=>severity-error )
+                        %element-CustomerID = if_abap_behv=>mk-on
+                      ) TO reported-travel.
+
+      ELSEIF travel-CustomerID IS NOT INITIAL AND NOT line_exists( valid_customers[ customer_id = travel-CustomerID ] ).
+        APPEND VALUE #(  %tky = travel-%tky ) TO failed-travel.
+
+        APPEND VALUE #(  %tky                = travel-%tky
+                         %state_area         = 'VALIDATE_CUSTOMER'
+                         %msg                = NEW /dmo/cm_flight_messages(
+                                                                customer_id = travel-customerid
+                                                                textid      = /dmo/cm_flight_messages=>customer_unkown
+                                                                severity    = if_abap_behv_message=>severity-error )
+                         %element-CustomerID = if_abap_behv=>mk-on
+                      ) TO reported-travel.
       ENDIF.
 
-      "raise msg for non existing and initial customer id
-      LOOP AT travels INTO DATA(travel).
-
-        APPEND VALUE #(  %tky                 = travel-%tky
-                         %state_area          = 'VALIDATE_CUSTOMER'
-                       ) TO reported-travel.
-
-        IF travel-CustomerID IS  INITIAL.
-          APPEND VALUE #( %tky = travel-%tky ) TO failed-travel.
-
-          APPEND VALUE #( %tky                = travel-%tky
-                          %state_area         = 'VALIDATE_CUSTOMER'
-                          %msg                = NEW /dmo/cm_flight_messages(
-                                                                  textid   = /dmo/cm_flight_messages=>enter_customer_id
-                                                                  severity = if_abap_behv_message=>severity-error )
-                          %element-CustomerID = if_abap_behv=>mk-on
-                        ) TO reported-travel.
-
-        ELSEIF travel-CustomerID IS NOT INITIAL AND NOT line_exists( valid_customers[ customer_id = travel-CustomerID ] ).
-          APPEND VALUE #(  %tky = travel-%tky ) TO failed-travel.
-
-          APPEND VALUE #(  %tky                = travel-%tky
-                           %state_area         = 'VALIDATE_CUSTOMER'
-                           %msg                = NEW /dmo/cm_flight_messages(
-                                                                  customer_id = travel-customerid
-                                                                  textid      = /dmo/cm_flight_messages=>customer_unkown
-                                                                  severity    = if_abap_behv_message=>severity-error )
-                           %element-CustomerID = if_abap_behv=>mk-on
-                        ) TO reported-travel.
-        ENDIF.
-
-      ENDLOOP.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -251,6 +253,74 @@ CLASS lhc_travel IMPLEMENTATION.
     ENDLOOP.
 
   ENDMETHOD.
+
+
+**************************************************************************
+* Instance-bound non-factory action with parameter `deductDiscount`:
+* Deduct the specified discount from the booking fee (BookingFee)
+**************************************************************************
+METHOD deductDiscount.
+  DATA travels_for_update TYPE TABLE FOR UPDATE ZRAP100_R_TravelTP_980.
+  DATA(keys_with_valid_discount) = keys.
+
+  " check and handle invalid discount values
+  LOOP AT keys_with_valid_discount ASSIGNING FIELD-SYMBOL(<key_with_valid_discount>)
+    WHERE %param-discount_percent IS INITIAL OR %param-discount_percent > 100 OR %param-discount_percent <= 0.
+
+    " report invalid discount value appropriately
+    APPEND VALUE #( %tky                       = <key_with_valid_discount>-%tky ) TO failed-travel.
+
+    APPEND VALUE #( %tky                       = <key_with_valid_discount>-%tky
+                    %msg                       = NEW /dmo/cm_flight_messages(
+                                                      textid = /dmo/cm_flight_messages=>discount_invalid
+                                                      severity = if_abap_behv_message=>severity-error )
+                    %element-TotalPrice        = if_abap_behv=>mk-on
+                    %op-%action-deductDiscount = if_abap_behv=>mk-on
+                  ) TO reported-travel.
+
+    " remove invalid discount value
+    DELETE keys_with_valid_discount.
+  ENDLOOP.
+
+  " check and go ahead with valid discount values
+  CHECK keys_with_valid_discount IS NOT INITIAL.
+
+  " read relevant travel instance data (only booking fee)
+  READ ENTITIES OF ZRAP100_R_TravelTP_980 IN LOCAL MODE
+    ENTITY Travel
+      FIELDS ( BookingFee )
+      WITH CORRESPONDING #( keys_with_valid_discount )
+    RESULT DATA(travels).
+
+  LOOP AT travels ASSIGNING FIELD-SYMBOL(<travel>).
+    DATA percentage TYPE decfloat16.
+    DATA(discount_percent) = keys_with_valid_discount[ key draft %tky = <travel>-%tky ]-%param-discount_percent.
+    percentage =  discount_percent / 100 .
+    DATA(reduced_fee) = <travel>-BookingFee * ( 1 - percentage ) .
+
+    APPEND VALUE #( %tky       = <travel>-%tky
+                    BookingFee = reduced_fee
+                  ) TO travels_for_update.
+  ENDLOOP.
+
+  " update data with reduced fee
+  MODIFY ENTITIES OF ZRAP100_R_TravelTP_980 IN LOCAL MODE
+    ENTITY Travel
+      UPDATE FIELDS ( BookingFee )
+      WITH travels_for_update.
+
+  " read changed data for action result
+  READ ENTITIES OF ZRAP100_R_TravelTP_980 IN LOCAL MODE
+    ENTITY Travel
+      ALL FIELDS WITH
+      CORRESPONDING #( travels )
+    RESULT DATA(travels_with_discount).
+
+  " set action result
+  result = VALUE #( FOR travel IN travels_with_discount ( %tky   = travel-%tky
+                                                          %param = travel ) ).
+ENDMETHOD.
+
 
 
 ENDCLASS.
