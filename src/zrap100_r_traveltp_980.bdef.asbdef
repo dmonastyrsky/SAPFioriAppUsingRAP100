@@ -53,6 +53,7 @@ early numbering
     validation validateCustomer;
     validation validateDates; }
 
+
   mapping for zrap100_atrav980 corresponding extensible
     {
       TravelID           = TRAVEL_ID;

@@ -1,8 +1,6 @@
 class ZRAP100_BP_C_TRAVELTP_980 definition
   public
-  abstract
-  final
-  for behavior of ZRAP100_C_TRAVELTP_980 .
+  create private .
 
 public section.
 protected section.

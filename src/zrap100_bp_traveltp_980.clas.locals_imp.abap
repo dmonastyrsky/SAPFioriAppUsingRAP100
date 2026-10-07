@@ -437,6 +437,7 @@ CLASS lhc_travel IMPLEMENTATION.
 **************************************************************************
   METHOD get_instance_features.
 
+
   " read relevant travel instance data
     READ ENTITIES OF ZRAP100_R_TravelTP_980 IN LOCAL MODE
       ENTITY travel

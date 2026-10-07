@@ -94,7 +94,7 @@ annotate view ZRAP100_C_TRAVELTP_980 with
 
   @UI.fieldGroup: [ { qualifier: 'UploadGroup', position: 30 } ]
   @UI.hidden: true
-  FileName;
+  FileName; 
 
   @UI.hidden: true
   LocalLastChangedAt;

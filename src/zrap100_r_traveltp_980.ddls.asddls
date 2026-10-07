@@ -38,6 +38,7 @@ define root view entity ZRAP100_R_TRAVELTP_980
       mime_type             as MimeType,
 
       file_name             as FileName,
+      
 
       @Semantics.user.createdBy: true
       created_by            as CreatedBy,

@@ -132,6 +132,7 @@ CLASS zrap100_tc_travel_eml_980 IMPLEMENTATION.
 
 
   METHOD setup.
+
     " clear the test doubles per test
     cds_test_environment->clear_doubles(  ).
     sql_test_environment->clear_doubles(  ).
@@ -140,6 +141,7 @@ CLASS zrap100_tc_travel_eml_980 IMPLEMENTATION.
     sql_test_environment->insert_test_data( customer_mock_data ).
     sql_test_environment->insert_test_data( carrier_mock_data  ).
     sql_test_environment->insert_test_data( flight_mock_data   ).
+
   ENDMETHOD.
 
 

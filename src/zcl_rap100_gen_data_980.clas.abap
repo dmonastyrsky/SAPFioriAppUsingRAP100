@@ -53,6 +53,7 @@ CLASS zcl_rap100_gen_data_980 IMPLEMENTATION.
             travel~lastchangedat    AS local_last_changed_at
             ORDER BY travel_id UP TO 10 ROWS
       ).
+
     COMMIT WORK.
     out->write( |[RAP100] Demo data generated for table ZRAP100_ATRAV{ group_id }. | ).
   ENDMETHOD.

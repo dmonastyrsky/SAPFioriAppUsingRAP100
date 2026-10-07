@@ -47,6 +47,7 @@ define root view entity ZRAP100_C_TRAVELTP_980
       @Semantics.mimeType: true
       MimeType,
       FileName,
+      
       @Semantics: {
         user.createdBy: true
       }

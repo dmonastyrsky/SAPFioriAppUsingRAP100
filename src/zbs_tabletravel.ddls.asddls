@@ -5,4 +5,4 @@ define table entity ZBS_TableTravel {
   CustomerId    : abap.char(10);
   Description   : abap.char(100);  
 
-}
+} 

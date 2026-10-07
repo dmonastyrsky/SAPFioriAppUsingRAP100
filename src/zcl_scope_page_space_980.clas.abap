@@ -13,7 +13,6 @@ ENDCLASS.
 
 CLASS zcl_scope_page_space_980 IMPLEMENTATION.
 METHOD if_oo_adt_classrun~main.
-
 *
 *    DATA(lo_scope_api) = cl_aps_bc_scope_change_api=>create_instance( ).
 *
